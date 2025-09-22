@@ -1,0 +1,5 @@
+{
+  "name": "acordes y canciones",
+  "description": "An AI-powered application that finds and displays guitar chords aligned with the lyrics for any song you search.",
+  "requestFramePermissions": []
+}

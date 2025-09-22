@@ -1,7 +1,11 @@
 
 import React from 'react';
 
-const Loader: React.FC = () => {
+interface LoaderProps {
+    message?: string;
+}
+
+const Loader: React.FC<LoaderProps> = ({ message }) => {
   return (
     <div className="flex flex-col items-center justify-center text-center p-8">
       <svg
@@ -25,10 +29,10 @@ const Loader: React.FC = () => {
         ></path>
       </svg>
       <p className="mt-4 text-lg font-semibold text-zinc-300">
-        Tuning up the AI...
+        {message || 'Tuning up the AI...'}
       </p>
       <p className="text-zinc-400">
-        The AI is listening and transcribing the chords. This may take a moment.
+        This may take a moment.
       </p>
     </div>
   );

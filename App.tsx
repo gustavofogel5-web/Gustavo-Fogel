@@ -1,29 +1,30 @@
 
 import React, { useState, useCallback } from 'react';
-import { getSongChords } from './services/geminiService';
-import type { SongData } from './types';
+import { findSong, getSongChords } from './services/geminiService';
+import type { SongData, SongSuggestion } from './types';
 import SearchBar from './components/SearchBar';
 import ChordDisplay from './components/ChordDisplay';
 import Loader from './components/Loader';
+import SongSuggestions from './components/SongSuggestions';
 import { GuitarIcon } from './components/icons/GuitarIcon';
 import { MicrophoneIcon } from './components/icons/MicrophoneIcon';
 
 const App: React.FC = () => {
   const [songData, setSongData] = useState<SongData | null>(null);
+  const [suggestions, setSuggestions] = useState<SongSuggestion[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [loaderMessage, setLoaderMessage] = useState<string>('');
 
-  const handleSearch = useCallback(async (songName: string) => {
-    if (!songName.trim()) {
-      setError("Please enter a song name.");
-      return;
-    }
+  const getChords = useCallback(async (song: SongSuggestion) => {
     setIsLoading(true);
     setError(null);
     setSongData(null);
+    setSuggestions(null);
+    setLoaderMessage(`Getting chords for "${song.songTitle}"...`);
 
     try {
-      const data = await getSongChords(songName);
+      const data = await getSongChords(song);
       if (data && data.songTitle) {
         setSongData(data);
       } else {
@@ -37,9 +38,41 @@ const App: React.FC = () => {
     }
   }, []);
 
+  const handleSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setError("Please enter a song name.");
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    setSongData(null);
+    setSuggestions(null);
+    setLoaderMessage('Searching for your song...');
+
+    try {
+      const result = await findSong(query);
+      if (result.resolved) {
+        // Direct match found, proceed to get chords
+        await getChords(result.resolved);
+      } else if (result.suggestions) {
+        // Ambiguous, show suggestions to the user
+        setSuggestions(result.suggestions);
+        setIsLoading(false);
+      } else {
+        // Not found
+        setError("Sorry, we couldn't find that song. Please check the spelling or try a different search.");
+        setIsLoading(false);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+      setError(`Search failed: ${errorMessage}`);
+      setIsLoading(false);
+    }
+  }, [getChords]);
+
   const renderContent = () => {
     if (isLoading) {
-      return <Loader />;
+      return <Loader message={loaderMessage} />;
     }
     if (error) {
       return (
@@ -48,6 +81,9 @@ const App: React.FC = () => {
           <p>{error}</p>
         </div>
       );
+    }
+    if (suggestions) {
+        return <SongSuggestions suggestions={suggestions} onSelect={getChords} isLoading={isLoading} />;
     }
     if (songData) {
       return <ChordDisplay songData={songData} />;

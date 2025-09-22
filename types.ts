@@ -1,11 +1,16 @@
+
 export interface LyricLine {
   chords: string;
   lyrics: string;
-  timestamp?: number;
 }
 
 export interface SongData {
   songTitle: string;
   artist: string;
   lines: LyricLine[];
+}
+
+export interface SongSuggestion {
+  songTitle: string;
+  artist: string;
 }
